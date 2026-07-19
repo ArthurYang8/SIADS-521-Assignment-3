@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.express as px
 
 # 1. Page Setup and Titles (Displays text on the web page)
+st.set_page_config(layout="wide")
 st.title('2025 Fantasy Football Analytics Dashboard')
 st.markdown('Explore positional value scarcity, efficiency metrics, and distribution models.')
 

@@ -163,7 +163,7 @@ fig_wr_hist.update_layout(yaxis_title="Number of Players")
 st.plotly_chart(fig_wr_hist, use_container_width=True)
 
 # the list of WRs as a dataframe
-st.subheader("Wide Receiver Archetype Rosters")
+st.subheader("Top 50 Wide Receivers")
 st.dataframe(
     filtered_wr[['Name', 'Archetype', 'YPR', 'PTS']].sort_values(by='PTS', ascending=False),
     use_container_width=True,

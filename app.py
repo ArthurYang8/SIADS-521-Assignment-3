@@ -34,17 +34,31 @@ rb_df = rb_df.sort_values(by='PTS', ascending=False).head(50)
 mid_x = rb_df['Rushing Yards'].median()
 mid_y = rb_df['Receiving Yards'].median()
 
-# 3. Interactive Web Controls (Swapped widgets for st.selectbox)
-col_left, col_right = st.columns(2)
+# Isolate Top 50 WRs
+wr_df = df[df['POS'] == 'WR'].copy()
+wr_df = wr_df.sort_values(by='PTS', ascending=False).head(50)
+wr_df['YPR'] = wr_df['Receiving Yards'] / wr_df['Receptions']
 
-with col_left:
+p33 = wr_df['YPR'].quantile(0.33)
+p66 = wr_df['YPR'].quantile(0.66)
+
+def categorize_wr(ypr):
+    if ypr > p66:   return 'Explosive (Deep Threat)'
+    elif ypr > p33: return 'Average (Balanced)'
+    else:           return 'Short Route / Checkdown'
+wr_df['Archetype'] = wr_df['YPR'].apply(categorize_wr)
+
+# 3. Interactive Web Controls Layout
+col_ctrl1, col_ctrl2, col_ctrl3 = st.columns(3)
+
+with col_ctrl1:
     selected_position = st.selectbox(
         label = "Select Position to Analyze (Chart 1):",
         options = ['QB', 'RB', 'WR', 'TE'],
         index = 0
     )
 
-with col_right:
+with col_ctrl2:
     # Streamlit search dropdown box for the top 50 RBs
     rb_list = sorted(rb_df['Name'].tolist())
     search_name = st.selectbox(
@@ -52,7 +66,13 @@ with col_right:
         options = ["Show All Players"] + rb_list
     )
 
-# 4. Filter and Chart Logic
+with col_ctrl3:
+    # Choose an archetype of WR
+    selected_archetype = st.selectbox(
+        label = "Filter Roster List by WR Archetype (Chart 3):",
+        options = ["All Archetypes", "Explosive (Deep Threat)", "Average (Balanced)", "Short Route / Checkdown"])
+
+# The dashboard itself
 st.write("")
 filtered_df = df[df['POS'] == selected_position]
 avg_tier_points = filtered_df.groupby('Tier', as_index=False)['PTS'].mean().sort_values('Tier')
@@ -71,7 +91,7 @@ fig_tier = px.bar(
 )
 fig_tier.update_layout(showlegend=False)
 
-# Renders the interactive Plotly chart on the web page canvas
+# Renders the chart
 st.plotly_chart(fig_tier, use_container_width = True)
 
 st.markdown("---")
@@ -104,6 +124,38 @@ if search_name != "Show All Players":
     opacity_array = [1.0 if n == search_name else 0.15 for n in rb_df['Name']]
 else:
     opacity_array = [0.85 for _ in rb_df['Name']]
+
+st.markdown("---")
+if selected_archetype != 'All Archetypes':
+    filtered_wr = wr_df[wr_df['Archetype'] == selected_archetype]
+else:
+    filtered_wr = wr_df
+
+fig_wr_hist = px.histogram(
+    filtered_wr,
+    x='PTS',
+    color='Archetype',
+    nbins=15,
+    title=f"Top 50 Wide Receivers Point Distribution Spread: {selected_archetype}",
+    labels={'PTS': 'Total Fantasy Points'},
+    color_discrete_map={
+        'Explosive (Deep Threat)': '#FFD166',
+        'Average (Balanced)': '#06D6A0',
+        'Short Route / Checkdown': '#118AB2'
+    },
+    width=950,
+    height=450
+)
+fig_wr_hist.update_layout(yaxis_title="Number of Players")
+st.plotly_chart(fig_wr_hist, use_container_width=True)
+
+# the list of WRs as a dataframe
+st.subheader("Wide Receiver Archetype Rosters")
+st.dataframe(
+    filtered_wr[['Name', 'Archetype', 'YPR', 'PTS']].sort_values(by='PTS', ascending=False),
+    use_container_width=True,
+    hide_index=True
+)
 
 # Safely inject the opacity values into the trace layout mapping
 fig_scatter.update_traces(marker=dict(opacity=opacity_array))

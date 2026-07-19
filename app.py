@@ -26,14 +26,33 @@ def assign_tier(rank):
     else:             return '5: Waiver Wire (Ranks 21+)'
 df['Tier'] = df['PositionRank'].apply(assign_tier)
 
+# Isolate the Top 50 RBs
+rb_df = df[df['POS'] == 'RB'].copy()
+rb_df = rb_df.sort_values(by='PTS', ascending=False).head(50)
+
+mid_x = rb_df['Rushing Yards'].median()
+mid_y = rb_df['Receiving Yards'].median()
+
 # 3. Interactive Web Controls (Swapped widgets for st.selectbox)
-selected_position = st.selectbox(
-    label = "Select Position to Analyze:",
-    options = ['QB', 'RB', 'WR', 'TE'],
-    index = 0
-)
+col_left, col_right = st.columns(2)
+
+with col_left:
+    selected_position = st.selectbox(
+        label = "Select Position to Analyze (Chart 1):",
+        options = ['QB', 'RB', 'WR', 'TE'],
+        index = 1
+    )
+
+with col_right:
+    # Streamlit search dropdown box for the top 50 RBs
+    rb_list = sorted(rb_df['Name'].tolist())
+    search_name = st.selectbox(
+        label = "Highlight a specific Running Back (Chart 2):",
+        options = ["Show All Players"] + rb_list
+    )
 
 # 4. Filter and Chart Logic
+st.write("")
 filtered_df = df[df['POS'] == selected_position]
 avg_tier_points = filtered_df.groupby('Tier', as_index=False)['PTS'].mean().sort_values('Tier')
 
@@ -52,4 +71,45 @@ fig_tier = px.bar(
 fig_tier.update_layout(showlegend=False)
 
 # Renders the interactive Plotly chart on the web page canvas
-st.plotly_chart(fig_tier)
+st.plotly_chart(fig_tier, use_container_width = True)
+
+st.markdown("---")
+
+st.header("2. Top 50 Running Back Profiles: Archetype Quadrants")
+st.markdown(
+    "**Top-Right:** Well-Rounded | **Bottom-Right:** Pure Runners | "
+    "**Top-Left:** Pass-Catchers | **Bottom-Left:** Waiver RBs"
+)
+
+fig_scatter = px.scatter(
+    rb_df,
+    x='Rushing Yards',
+    y='Receiving Yards',
+    color='PTS',
+    size='Receptions',
+    hover_name='Name',
+    title="Top 50 Running Back Profiles: Rushing vs. Receiving Yards",
+    labels={
+        'Rushing Yards': 'Total Rushing Yards',
+        'Receiving Yards': 'Total Receiving Yards',
+        'PTS': 'Total Fantasy Points'
+    },
+    color_continuous_scale=px.colors.sequential.Viridis,
+    width=950,
+    height=600
+)
+
+if search_name != "Show All Players":
+    opacity_array = [1.0 if n == search_name else 0.15 for n in rb_df['Name']]
+else:
+    opacity_array = [0.85 for _ in rb_df['Name']]
+
+# Safely inject the opacity values into the trace layout mapping
+fig_scatter.update_traces(marker=dict(opacity=opacity_array))
+
+# Draw the benchmark quadrant crosshairs onto the Streamlit canvas
+fig_scatter.add_vline(x=mid_x, line_dash="dash", line_color="red", annotation_text=" Rushing Median")
+fig_scatter.add_hline(y=mid_y, line_dash="dash", line_color="red", annotation_text=" Receiving Median")
+fig_scatter.update_layout(hovermode='closest')
+
+st.plotly_chart(fig_scatter, use_container_width=True)

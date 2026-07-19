@@ -125,7 +125,16 @@ if search_name != "Show All Players":
 else:
     opacity_array = [0.85 for _ in rb_df['Name']]
 
+# Opacity Values and rendering chart 2
+fig_scatter.update_traces(marker=dict(opacity=opacity_array))
+fig_scatter.add_vline(x=mid_x, line_dash="dash", line_color="red", annotation_text=" Rushing Median")
+fig_scatter.add_hline(y=mid_y, line_dash="dash", line_color="red", annotation_text=" Receiving Median")
+fig_scatter.update_layout(hovermode='closest')
+st.plotly_chart(fig_scatter, use_container_width=True)
+
 st.markdown("---")
+st.header("3. Wide Receiver Profiles: Point Distribution by Archetype")
+
 if selected_archetype != 'All Archetypes':
     filtered_wr = wr_df[wr_df['Archetype'] == selected_archetype]
 else:
@@ -157,12 +166,3 @@ st.dataframe(
     hide_index=True
 )
 
-# Safely inject the opacity values into the trace layout mapping
-fig_scatter.update_traces(marker=dict(opacity=opacity_array))
-
-# Draw the benchmark quadrant crosshairs onto the Streamlit canvas
-fig_scatter.add_vline(x=mid_x, line_dash="dash", line_color="red", annotation_text=" Rushing Median")
-fig_scatter.add_hline(y=mid_y, line_dash="dash", line_color="red", annotation_text=" Receiving Median")
-fig_scatter.update_layout(hovermode='closest')
-
-st.plotly_chart(fig_scatter, use_container_width=True)

@@ -48,6 +48,10 @@ def categorize_wr(ypr):
     else:           return 'Short Route / Checkdown'
 wr_df['Archetype'] = wr_df['YPR'].apply(categorize_wr)
 
+# Isolate Top 30 QBs
+qb_df = df[df['POS'] == 'QB'].copy()
+qb_df = qb_df.sort_values(by='Passing Yards', ascending=False).head(30)
+
 # 3. Interactive Web Controls Layout
 col_ctrl1, col_ctrl2, col_ctrl3 = st.columns(3)
 
@@ -166,3 +170,21 @@ st.dataframe(
     hide_index=True
 )
 
+st.markdown("---")
+st.header("4. Quarterback Efficiency: Passing Yards vs. Total Points")
+
+fig_qb_line = px.line(
+    qb_df,
+    x='Passing Yards',
+    y='PTS',
+    hover_name='Name',
+    hover_data={'Rushing Yards': True},
+    labels={
+        'Passing Yards': 'Total Passing Yards', 
+        'Rushing Yards': 'Total Rushing Yards', 
+        'PTS': 'Total Fantasy Points'
+    },
+    markers=True
+)
+fig_qb_line.update_traces(line=dict(color='#4A6FA5', width=3), marker=dict(size=8))
+st.plotly_chart(fig_qb_line, use_container_width=True)

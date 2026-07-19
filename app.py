@@ -1,4 +1,4 @@
-import streamlit as st
+simport streamlit as st
 import pandas as pd
 import plotly.express as px
 
@@ -179,6 +179,7 @@ fig_qb_line = px.line(
     y='PTS',
     hover_name='Name',
     hover_data={'Rushing Yards': True},
+    title = "QB Efficiency: Passing Yards vs Total Points",
     labels={
         'Passing Yards': 'Total Passing Yards', 
         'Rushing Yards': 'Total Rushing Yards', 

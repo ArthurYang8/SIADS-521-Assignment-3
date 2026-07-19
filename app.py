@@ -40,7 +40,7 @@ with col_left:
     selected_position = st.selectbox(
         label = "Select Position to Analyze (Chart 1):",
         options = ['QB', 'RB', 'WR', 'TE'],
-        index = 1
+        index = 0
     )
 
 with col_right:
